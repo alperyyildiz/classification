@@ -24,7 +24,7 @@ from mlxtend.classifier import StackingCVClassifier # <- Here is our boy
 import warnings
 warnings.simplefilter('ignore')
 
-rosemary = pd.read_csv('Class.csv')
+rosemary = pd.read_excel('SON.xlsx')
 rosemary = rosemary.dropna( axis = 0)
 #rosemary['XU030 Index - Volume'] = rosemary['XU030 Index - Volume'].astype(float)
 
@@ -35,13 +35,20 @@ rosemary = rosemary.dropna( axis = 0)
 #plt.figure(figsize=(20,20))
 #plot heat map
 #g=sns.heatmap(rosemary[top_corr_features].corr(),annot=True,cmap="RdYlGn")
-rosemary['Date'] = pd.to_datetime(rosemary['Date'])  
 
 
-#instances until 2018.6.01
-TRAIN_df = rosemary[ rosemary['Date'] < '2018-6-01' ]
-#instances after 2018.6.01
-TEST_df = rosemary[ rosemary['Date'] >= '2018-6-01' ]
+if rosemary.Date.dtype == int:
+    #instances until 2018.6.01
+    TRAIN_df = rosemary.iloc[ : -487 ]
+    #instances after 2018.6.01
+    TEST_df = rosemary.iloc[ -487: ]
+else:
+    rosemary['Date'] = pd.to_datetime(rosemary['Date'])  
+
+    #instances until 2018.6.01
+    TRAIN_df = rosemary[ rosemary['Date'] < '2018-6-01' ]
+    #instances after 2018.6.01
+    TEST_df = rosemary[ rosemary['Date'] >= '2018-6-01' ]
 
 
 # --- Created these two for SelectKBest algo used in the end 
