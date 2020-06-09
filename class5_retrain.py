@@ -29,20 +29,18 @@ rosemary = rosemary.dropna( axis = 0)
 
 
 #Create Feature/Class sets
-X = rosemary.drop(['Class','Date','L1','XU030 Index - Volume','SPX Vol 20','VIX(-3)','Month of the Year','CL1 MA 50','CL1 MA 20','SPX Vol 50','SMAVG (21)','10Yr','SPX(-3)','CL1 MA 5',
+X = rosemary.drop(['Class', 'Date','L1','XU030 Index - Volume','SPX Vol 20','VIX(-3)','Month of the Year','CL1 MA 50','CL1 MA 20','SPX Vol 50','SMAVG (21)','10Yr','SPX(-3)','CL1 MA 5',
                    'DAX(-3)','Day of the Week','SMAVG (5)','10Yr(-1)','10Yr(-3)','SMAVG (200)','CL1 (-3)','NIKKEI','DXY(-1)','CL1','USDTRY(-2)'
                    ,'SMAVG (100)','SMAVG (13)','CL1 MA 10','SPX(-2)','NIKKEI(-2)','Close(-4)','SMAVG (50)','10Yr(-2)','SPX MA 50',
                    'EEM(-3)','VIX(-2)','VIX(-1)','CL1 (-1)'],1)
-y = rosemary['Class']
+y = rosemary[ 'Class' ]
+RETURNS = rosemary[ 'L1' ]
 
-
-
-  
 
 BASE = 487
 cycle = 5 * 2                #Num of days for model to be trained again
 loop_range = BASE // cycle   #Num of training needed
-
+TEST_RETURNS = RETURNS[ -BASE : ]
 
 #Initialize collection of results
 LAST_RESULTS = pd.DataFrame()
@@ -112,7 +110,7 @@ for PART in range( loop_range ):
         
         # Fit classifier
         classifier.fit( X_train, y_train )
-            
+
         # Save fitted classifier
         classifiers[key] = classifier
 
@@ -127,12 +125,11 @@ for PART in range( loop_range ):
     
 
 
-
 # Add the test set to the results object
 y_test = y.iloc[ -BASE : ]
 #CHANGED HERE since it returns NaN in dataframe
 LAST_RESULTS["Target"] = np.array( y_test )
- 
+
 
 # Probability Distributions Figure
 # Set graph style
