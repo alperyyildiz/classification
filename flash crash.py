@@ -20,14 +20,23 @@ values = pd.DataFrame({ 'Date': date_range})
 values['Date']= pd.to_datetime(values['Date'])
 
 #Extracting Data from Yahoo Finance and Adding them to Values table using date as key
-for i in range(len(ticker)):
-    raw_data = YahooFinancials(names[i])
-    raw_data = raw_data.get_historical_price_data(start_date, end_date, "daily")
-    df = pd.DataFrame(raw_data[i]['prices'])[['formatted_date','adjclose']]
-    df.columns = ['Date1',i]
-    df['Date1']= pd.to_datetime(df['Date1'])
-    values = values.merge(df,how='left',left_on='Date',right_on='Date1')
-    values = values.drop(labels='Date1',axis=1)
+
+#We can loop over the list holds names so the loop variable can hold each asset in each time
+#Instead of calling strings in names, we assign those as loop variable.
+#The error occurs since we looped over tickers which is a list of int, and tried to use it as asset name
+#Also you should leave a blank in code for better readability. It's time saving in long term.
+for ASSET in names:
+    
+    raw_data = YahooFinancials( ASSET )
+    raw_data = raw_data.get_historical_price_data( start_date, end_date, "daily")
+    #This raw_data object now holds list of Dictionary object which holds daily information of prices, ohlc etc.
+    #
+    
+    df = pd.DataFrame( raw_data[ ASSET ][ 'prices'] )[ [ 'formatted_date', 'adjclose' ] ]
+    df.columns = [ 'Date1', ASSET ]
+    df[ 'Date1' ] = pd.to_datetime( df[ 'Date1' ] )
+    values = values.merge( df, how = 'left', left_on = 'Date', right_on = 'Date1' )
+    values = values.drop( labels = 'Date1', axis = 1 )
 
 #Renaming columns to represent instrument names rather than their ticker codes for ease of readability
 names.insert(0,'Date')
@@ -112,3 +121,4 @@ print(data.shape)
 data.isna().sum()
 
 sns.distplot(data['Gold-T+22'])
+
