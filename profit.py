@@ -10,7 +10,7 @@ BT = pd.DataFrame( { 'Date': date_list,
 #Initialize cash amount and init state 
 cash = 1000
 cash_real = 1000
-
+RET_DAYS = 10
 state = 'CASH'
 state_real = 'CASH'
 #Get # of test days and binary predictions 
@@ -31,17 +31,17 @@ first_buy_signal_index = find_first(  np.array( PREDS ) == 1 )
 
 
 for ind in range( first_buy_signal_index, num_of_samples ):
-    if state == 'CASH' and PREDS[ ind - 4 ] == 1:
+    if state == 'CASH' and PREDS[ ind - RET_DAYS + 1 ] == 1:
         SIGNAL[ ind ] = 1
         state = 'IN'
-    elif state == 'IN' and PREDS[ ind - 4] == 0:
+    elif state == 'IN' and PREDS[ ind - RET_DAYS + 1 ] == 0:
         SIGNAL[ ind ] = -1
         state = 'CASH'
 
-    if state_real == 'CASH' and  TARGET[ ind - 4 ] == 1:
+    if state_real == 'CASH' and  TARGET[  ind - RET_DAYS + 1  ] == 1:
         SIGNAL_REAL[ ind ] = 1
         state_real = 'IN'
-    elif state_real == 'IN' and TARGET[ ind - 4 ] == 0:
+    elif state_real == 'IN' and TARGET[  ind - RET_DAYS + 1  ] == 0:
         SIGNAL_REAL[ ind ] = -1
         state_real = 'CASH'
 
