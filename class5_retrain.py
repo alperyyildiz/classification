@@ -13,26 +13,30 @@ from sklearn.feature_selection import f_classif
 from lightgbm import LGBMClassifier
 
 # Classifiers
-from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.linear_model import Perceptron
+from sklearn.linear_model.ridge import RidgeClassifierCV
 from catboost import CatBoostClassifier
-from sklearn.svm import NuSVC, SVC
-from sklearn.neural_network import MLPClassifier
-from sklearn.ensemble import RandomForestClassifier
-from mlxtend.classifier import StackingCVClassifier # <- Here is our boy :):)
+from lightgbm import LGBMClassifier
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.svm import SVC
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.neural_network.multilayer_perceptron import MLPClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from mlxtend.classifier import StackingCVClassifier # <- Here is our boy
 
 # Used to ignore warnings generated from StackingCVClassifier
 import warnings
 warnings.simplefilter('ignore')
 
-rosemary = pd.read_excel('SON.xlsx')
+rosemary = pd.read_excel('Class.xlsx')
 rosemary = rosemary.dropna( axis = 0)
 
 
 #Create Feature/Class sets
-X = rosemary.drop(['Class','Class Mult', 'Date','XU030 Index - Volume','SPX Vol 20','VIX(-3)','Month of the Year','CL1 MA 50','CL1 MA 20','SPX Vol 50','SMAVG (21)','10Yr','SPX(-3)','CL1 MA 5',
-                   'DAX(-3)','Day of the Week','SMAVG (5)','10Yr(-1)','10Yr(-3)','SMAVG (200)','CL1 (-3)','NIKKEI','DXY(-1)','CL1','USDTRY(-2)'
-                   ,'SMAVG (100)','SMAVG (13)','CL1 MA 10','SPX(-2)','NIKKEI(-2)','SMAVG (50)','10Yr(-2)','SPX MA 50',
-                   'EEM(-3)','VIX(-2)','VIX(-1)','CL1 (-1)'],1)
+X = rosemary.drop(['Class','Date','L1','XU030 Index - Volume','XAUXAG(-2)', 'CL1 MA 50', 'CL1 MA 5', 'Close (-1)', 'Return in 60 days','USDTRY(-1)',
+                   '10Yr(-2)','Close(-4)','SPX Vol 10','USDTRY Vol 10','EEM(-3)','VIX(-3)','SMAVG (100)',
+                   '10Yr(-1)','DXY(-3)','SPX(-3)','USDTRY MA 20','SMAVG (50)', 'SMAVG (5)'],1)
 y = rosemary[ 'Class' ]
 
 
@@ -78,28 +82,30 @@ for PART in range( loop_range ):
     X_test = mm.transform(X_test)
 
 
-    #initializing classifiers
-    classifier1 = MLPClassifier(activation = 'relu', solver = 'adam', alpha = 0.1, hidden_layer_sizes = (16, 16, 16), learning_rate = 'constant', max_iter = 2000, random_state=1000)
-    classifier2 = RandomForestClassifier(n_estimators = 500, criterion = 'gini', max_depth = 15, max_features = 'auto', min_samples_leaf = 0.005, min_samples_split = 0.005, n_jobs = -1, random_state=1000)
-    classifier3 = SVC(C = 50, degree = 1, gamma = "auto", kernel = "rbf", probability = True)
-    classifier4 = CatBoostClassifier()
-    classifier5 = LGBMClassifier()
+#initializing classifiers
+classifier1 = MLPClassifier(activation = 'relu', solver = 'adam', hidden_layer_sizes =(64 , 64 , 32), batch_size = 50, learning_rate = 'invscaling', max_iter = 2500)
+#classifier5 = RandomForestClassifier(n_estimators = 500, criterion = 'gini', max_depth = 10, max_features = 'auto', min_samples_leaf = 0.005, min_samples_split = 0.005, n_jobs = -1, random_state=1000)
+classifier2 = LGBMClassifier()
+#classifier3 = BernoulliNB()
+classifier4 = CatBoostClassifier()
+classifier5 = ExtraTreesClassifier(criterion = 'gini',bootstrap = True, oob_score = 'True', class_weight = 'balanced_subsample')
 
-    #Stacking
-    sclf = StackingCVClassifier(classifiers = [classifier1, classifier2,classifier3, classifier4],
-                                shuffle = False,
-                                use_probas = True,
-                                cv = 5,
-                                meta_classifier = CatBoostClassifier())
+#Stacking
+sclf = StackingCVClassifier(classifiers = [classifier1, classifier2, classifier4, classifier5],
+                            shuffle = False,
+                            use_probas = True,
+                            cv = 5,
+                            meta_classifier = SVC(probability = True))
 
-    #List to store classifiers
-    classifiers = {"SVC": classifier3,
-                  "MLP": classifier1,
-                  "CatBoost": classifier4,
-                  "RF": classifier2,
-                  "LGBM": classifier5,
-                  "Stack": sclf}
-    
+#List to store classifiers
+classifiers = {"MLP": classifier1,
+               "LGBM": classifier2,
+#               "NB": classifier3,
+               "CatBoost": classifier4,
+               "ET": classifier5,
+               "Stack": sclf}
+
+
     TEMP_RESULTS = pd.DataFrame()  
     # Train classifiers
     for key in classifiers:
