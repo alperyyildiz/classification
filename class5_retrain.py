@@ -69,63 +69,63 @@ for PART in range( loop_range ):
         X_test = X.iloc[ -BASE + ITER_DAYS : -BASE + ITER_DAYS + cycle ]
         y_test = y.iloc[ -BASE + ITER_DAYS : -BASE + ITER_DAYS + cycle ]
 
-    print(PART)
-    print('\n')
-    print(y_train.shape)
-    print('\n')
-    print(y_test.shape)
-    print('\n')
+        print(PART)
+        print('\n')
+        print(y_train.shape)
+        print('\n')
+        print(y_test.shape)
+        print('\n')
 
 
-    mm = MinMaxScaler()
-    X_train = mm.fit_transform(X_train)
-    X_test = mm.transform(X_test)
+        mm = MinMaxScaler()
+        X_train = mm.fit_transform(X_train)
+        X_test = mm.transform(X_test)
 
 
-#initializing classifiers
-classifier1 = MLPClassifier(activation = 'relu', solver = 'adam', hidden_layer_sizes =(64 , 64 , 32), batch_size = 50, learning_rate = 'invscaling', max_iter = 2500)
-#classifier5 = RandomForestClassifier(n_estimators = 500, criterion = 'gini', max_depth = 10, max_features = 'auto', min_samples_leaf = 0.005, min_samples_split = 0.005, n_jobs = -1, random_state=1000)
-classifier2 = LGBMClassifier()
-#classifier3 = BernoulliNB()
-classifier4 = CatBoostClassifier()
-classifier5 = ExtraTreesClassifier(criterion = 'gini',bootstrap = True, oob_score = 'True', class_weight = 'balanced_subsample')
+        #initializing classifiers
+        classifier1 = MLPClassifier(activation = 'relu', solver = 'adam', hidden_layer_sizes =(64 , 64 , 32), batch_size = 50, learning_rate = 'invscaling', max_iter = 2500)
+        #classifier5 = RandomForestClassifier(n_estimators = 500, criterion = 'gini', max_depth = 10, max_features = 'auto', min_samples_leaf = 0.005, min_samples_split = 0.005, n_jobs = -1, random_state=1000)
+        classifier2 = LGBMClassifier()
+        #classifier3 = BernoulliNB()
+        classifier4 = CatBoostClassifier()
+        classifier5 = ExtraTreesClassifier(criterion = 'gini',bootstrap = True, oob_score = 'True', class_weight = 'balanced_subsample')
 
-#Stacking
-sclf = StackingCVClassifier(classifiers = [classifier1, classifier2, classifier4, classifier5],
-                            shuffle = False,
-                            use_probas = True,
-                            cv = 5,
-                            meta_classifier = SVC(probability = True))
+        #Stacking
+        sclf = StackingCVClassifier(classifiers = [classifier1, classifier2, classifier4, classifier5],
+                                    shuffle = False,
+                                    use_probas = True,
+                                    cv = 5,
+                                    meta_classifier = SVC(probability = True))
 
-#List to store classifiers
-classifiers = {"MLP": classifier1,
-               "LGBM": classifier2,
-#               "NB": classifier3,
-               "CatBoost": classifier4,
-               "ET": classifier5,
-               "Stack": sclf}
+        #List to store classifiers
+        classifiers = {"MLP": classifier1,
+                       "LGBM": classifier2,
+        #               "NB": classifier3,
+                       "CatBoost": classifier4,
+                       "ET": classifier5,
+                       "Stack": sclf}
 
 
-    TEMP_RESULTS = pd.DataFrame()  
-    # Train classifiers
-    for key in classifiers:
-        # Get classifier
-        classifier = classifiers[ key ]
-        
-        # Fit classifier
-        classifier.fit( X_train, y_train )
+        TEMP_RESULTS = pd.DataFrame()  
+        # Train classifiers
+        for key in classifiers:
+            # Get classifier
+            classifier = classifiers[ key ]
 
-        # Save fitted classifier
-        classifiers[key] = classifier
+            # Fit classifier
+            classifier.fit( X_train, y_train )
 
-        # Make prediction on test set
-        y_pred = classifiers[ key ].predict_proba( X_test )[ : , 1 ]
+            # Save fitted classifier
+            classifiers[key] = classifier
 
-        # Save results in TEMP_RESULTS
-        TEMP_RESULTS[f"{key}"] = y_pred
-    
-    #Append results in LAST_RESULTS
-    LAST_RESULTS = LAST_RESULTS.append( TEMP_RESULTS )
+            # Make prediction on test set
+            y_pred = classifiers[ key ].predict_proba( X_test )[ : , 1 ]
+
+            # Save results in TEMP_RESULTS
+            TEMP_RESULTS[f"{key}"] = y_pred
+
+        #Append results in LAST_RESULTS
+        LAST_RESULTS = LAST_RESULTS.append( TEMP_RESULTS )
     
 
 # Add the test set to the results object
