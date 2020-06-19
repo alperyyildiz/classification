@@ -214,3 +214,25 @@ class Classifierz():
         data = data.drop(['SPX-T+14','SPX-T+22','Date'],axis=1)
 
         self.data = data.drop(['Y-221','Y-222','Y-142'],axis=1)
+
+        
+#rosemary = Classifierz()
+#rosemary.preprocess( ticker_details )
+#rosemary.split( 93 )
+
+#knn = KNeighborsClassifier( n_neighbors = 2 )
+#ext = ExtraTreesClassifier(n_estimators=100, random_state=0)
+#gb = GradientBoostingClassifier( random_state = 0 )
+#mlp = MLPClassifier(random_state=1, max_iter=1000)
+
+
+#rosemary.add_classifier( knn, 'KNN' )
+#rosemary.add_classifier( ext, 'EXT' )
+#rosemary.add_classifier( gb, 'GB')
+#rosemary.add_classifier( mlp, 'MLP' )
+
+#rosemary.train()
+#rosemary.test()
+        
+    
+#print(rosemary.scores)
