@@ -1,19 +1,3 @@
-import pandas as pd
-from datetime import datetime
-import matplotlib.pyplot as plt
-from yahoofinancials import YahooFinancials
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
-from sklearn.neighbors import KNeighborsClassifier
-import numpy as np
-import seaborn as sns
-import scipy.stats as st
-from pycaret.classification import *
-from imblearn.over_sampling import ADASYN
-from imblearn.combine import SMOTETomek
-from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import f1_score, precision_score, roc_auc_score
 
 ticker_details = pd.read_excel('Ticker List.xlsx')
 class Classifierz():
@@ -24,74 +8,6 @@ class Classifierz():
         self.metircs_key = [ 'f1', 'precision', 'roc_auc']
         #self.first = True 
 
-
-    def add_classifier( self, classifier, key ):
-        self.class_list.append( classifier )
-        self.class_key.append( key )
-
-    def test(self):
-        self.make_pred()
-        self.scores()
-
-
-    def make_pred( self, for_valid = True ):
-        if for_valid: 
-            TARGET = self.y_val
-            XXX = self.X_val
-        else:
-            TARGET = self.y_test
-            XXX = self.X_test
-
-        for i, classifier in enumerate(  self.class_list ):
-            print(i)
-            temp = classifier.predict( XXX )
-            if i == 0:
-                results = pd.DataFrame( { 'Target': TARGET,
-                                            self.class_key[ i ] : temp } )
-            else:
-                results[ key ] = temp
-    
-        self.results = results
-
-
-    def split( self, last_x_days ):
-        self.TEST_data = self.data.iloc[ -last_x_days : ]
-        self.TRAIN_data = self.data.iloc[ : -last_x_days ]
-
-        X = self.TRAIN_data.drop(['Y-141'],axis=1)
-        y = self.TRAIN_data['Y-141']
-        
-        
-
-        X_train, self.X_val, y_train, self.y_val = train_test_split( X, y, test_size = 0.3 ) 
-        smt = SMOTETomek()
-
-        self.X_train, self.y_train = smt.fit_sample( X_train, y_train )
-
-        self.X_test = self.TEST_data.drop(['Y-141'],axis=1)
-        self.y_test = self.TEST_data['Y-141']
-
-    def train( self ):
-        for classifier in self.class_list:
-            classifier.fit( self.X_train, self.y_train )
-            print('JHEY')
-
-    def scores( self ):
-        KEYS = self.results.keys().to_list()
-        counter = 0
-        for  key in KEYS:
-            if key != 'Target':
-                score_list = list()
-                for metric in self.metrics:
-                    score_list.append( metric( self.results[ 'Target' ], self.results[ key ] ) )
-
-                if counter == 0:
-                    scores = pd.DataFrame( { key: score_list  })
-                    counter = counter + 1
-                else:
-                    scores[ key ] = score
-                    counter = counter + 1
-        self.scores = scores
 
     def preprocess( self, ticker_details ):
         ticker = ticker_details['Ticker'].to_list()
@@ -114,6 +30,7 @@ class Classifierz():
             values = values.merge(df,how='left',left_on='Date',right_on='Date1')
             values = values.drop(labels='Date1',axis=1)
 
+
         #Renaming columns to represent instrument names rather than their ticker codes for ease of readability
         names.insert(0,'Date')
         values.columns = names
@@ -130,17 +47,15 @@ class Classifierz():
         values[cols] = values[cols].apply(pd.to_numeric,errors='coerce').round(decimals=4)
         #print(values.tail())
 
-
         imp = ['Gold','USD Index', 'Oil', 'SPX','VIX', 'High Yield Fund' , 'Nikkei', 'Dax', '10Yr', '2Yr' , 'EEM' ,'XLE', 'XLF', 'XLI', 'AUDJPY']
         # Calculating Short term -Historical Returns
         change_days = [1,3,5,14,21]
-
+        
         data = pd.DataFrame(data=values['Date'])
         for i in change_days:
             x= values[cols].pct_change(periods=i).add_suffix("-T-"+str(i))
             data=pd.concat(objs=(data,x),axis=1)
             x=[]
-        #print(data.shape)
 
 
 
@@ -210,29 +125,157 @@ class Classifierz():
         data['Y-142'] = (data['SPX-T+14']> t_142)*1
         data['Y-221']= (data['SPX-T+22']< t_221)*1
         data['Y-222']= (data['SPX-T+22']> t_222)*1
+        self.DATE_ALL_DATA = data[ 'Date' ]
+        last_values = values[values[ 'Date' ] <= data[ 'Date' ].iloc[-1]]
+        self.ALL_RETURNS = list()
 
+        RATES = data[ 'SPX-T+14' ].to_list()
+        CLOSE = last_values['SPX'].to_list()
+        for i in range( len( data[ 'SPX-T+14' ] ) ):
+            self.ALL_RETURNS.insert(0, RATES[ i ] * CLOSE[ i ] )
+        print( self.ALL_RETURNS )
         data = data.drop(['SPX-T+14','SPX-T+22','Date'],axis=1)
-
         self.data = data.drop(['Y-221','Y-222','Y-142'],axis=1)
 
-        
-#rosemary = Classifierz()
-#rosemary.preprocess( ticker_details )
-#rosemary.split( 93 )
+    def add_classifier( self, classifier, key ):
+        self.class_list.append( classifier )
+        self.class_key.append( key )
 
-#knn = KNeighborsClassifier( n_neighbors = 2 )
-#ext = ExtraTreesClassifier(n_estimators=100, random_state=0)
-#gb = GradientBoostingClassifier( random_state = 0 )
-#mlp = MLPClassifier(random_state=1, max_iter=1000)
+    def test(self):
+        self.make_pred()
+        self.scores()
+
+
+    def make_pred( self, for_valid = True ):
+        if for_valid: 
+            TARGET = self.y_val
+            XXX = self.X_val
+        else:
+            TARGET = self.y_test
+            XXX = self.X_test
+
+        for i, classifier in enumerate(  self.class_list ):
+            print(i)
+            temp = classifier.predict( XXX )
+            if i == 0:
+                results = pd.DataFrame( { 'Target': TARGET,
+                                            self.class_key[ i ] : temp } )
+            else:
+                results[ self.class_key[ i ] ] = temp
+       
+        if for_valid: 
+            self.results = results
+        else:
+            self.BT_RESULTS = results
+
+
+    def split( self, last_x_days ):
+        self.TEST_data = self.data.iloc[ -last_x_days : ]
+
+        self.DATE_TEST = self.DATE_ALL_DATA.iloc[ -last_x_days : ]
+        self.TEST_RETURNS = self.ALL_RETURNS[ -last_x_days : ]
+
+        self.TRAIN_data = self.data.iloc[ : -last_x_days ]
+
+        X = self.TRAIN_data.drop(['Y-141'],axis=1)
+        y = self.TRAIN_data['Y-141']
+        
+        X_train, self.X_val, y_train, self.y_val = train_test_split( X, y, test_size = 0.3 ) 
+
+        smt = SMOTETomek()
+
+        self.X_train, self.y_train = smt.fit_sample( X_train, y_train )
+
+        self.X_test = self.TEST_data.drop(['Y-141'],axis=1)
+        self.y_test = self.TEST_data['Y-141']
+
+        mm = MinMaxScaler()
+        mm = mm.fit(self.X_train)
+        self.X_train = mm.transform(self.X_train)
+        self.X_val = mm.transform(self.X_val)
+
+        mm_NEW = MinMaxScaler()
+        mm_NEW = mm_NEW.fit(X_train)
+        self.X_test = mm_NEW.transform(self.X_test)
+
+
+
+    def train( self ):
+        for classifier in self.class_list:
+            classifier.fit( self.X_train, self.y_train )
+
+    def scores( self ):
+        KEYS = self.results.keys().to_list()
+        counter = 0
+        for  key in KEYS:
+            if key != 'Target':
+                score_list = list()
+                for metric in self.metrics:
+                    score_list.append( metric( self.results[ 'Target' ], self.results[ key ] ) )
+
+                if counter == 0:
+                    scores = pd.DataFrame( { key: score_list  })
+                    counter = counter + 1
+                else:
+                    scores[ key ] = score_list
+                    counter = counter + 1
+        self.scores = scores
+    
+    def backtest(self):
+        list_of_cash_tt = list()
+        self.make_pred( for_valid = False )
+        classifiers = self.BT_RESULTS.keys().to_list()
+        count = 0
+        for CCC in classifiers:
+            if CCC != 'Target':
+                temp_cash = list()
+                temp_cash.append( 0 )
+                cc = 0
+
+                preds = self.BT_RESULTS[ CCC ].to_list()
+
+                assert len( preds ) ==  len( self.TEST_RETURNS )
+
+                for i in range( len( preds ) ):
+                    if preds[ i ] == 1:
+                        cc += -self.TEST_RETURNS[ i ]
+                    temp_cash.append( cc )
+
+                if count == 0:
+                    CASH = pd.DataFrame( { CCC: temp_cash  })
+                    count += 1
+                else:
+                    CASH[ CCC ] = temp_cash
+                    count += 1
+
+        self.CASH = CASH
+
+                  
+    def prob_to_label( self, probs ):
+        labels = list()
+        for i in range( len( probs ) ):
+            labels.append( np.round( probs[ 1 ] ) )
+
+
+
+rosemary = Classifierz()
+rosemary.preprocess( ticker_details )
+rosemary.split( 93 )
+
+
+knn = KNeighborsClassifier( n_neighbors = 2 )
+ext = ExtraTreesClassifier(n_estimators=100, random_state=0)
+gb = GradientBoostingClassifier( random_state = 0 )
+mlp = MLPClassifier(random_state=1, max_iter=1000)
 
 
 #rosemary.add_classifier( knn, 'KNN' )
-#rosemary.add_classifier( ext, 'EXT' )
-#rosemary.add_classifier( gb, 'GB')
+rosemary.add_classifier( ext, 'EXT' )
+rosemary.add_classifier( gb, 'GB')
 #rosemary.add_classifier( mlp, 'MLP' )
 
-#rosemary.train()
-#rosemary.test()
-        
-    
-#print(rosemary.scores)
+rosemary.train()
+
+
+rosemary.test()
+rosemary.backtest()
