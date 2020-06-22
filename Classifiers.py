@@ -349,7 +349,6 @@ class HELP():
                 if classifier not in self.class_key_spike:
                     self.class_key_spike.append( classifier )
 
-
 class Classifierz( HELP ):
     def __init__( self, last_x_days, cycle, return_days, multicollinearity ):
         super().__init__()
@@ -455,16 +454,18 @@ class Classifierz( HELP ):
             if self.counter == 0:
                 self.results_crash = results
             else:
-                self.results_crash.append( results )
+                self.results_crash = self.results_crash.append( results )
+
         else:
             if self.counter == 0:
                 self.results_spike = results
             else:
-                self.results_crash.append( results )
+
+                self.results_crash = self.results_crash.append( results )
 
 
     def smotetomek( self, X_train, y_train ):
-        smt = SMOTETomek()
+        smt = SMOTETomek( random_state = 21 )
         return smt.fit_sample( X_train, y_train )
 
     def redefine_classifiers( self ):
@@ -507,7 +508,8 @@ class Classifierz( HELP ):
             true = self.results_spike[ 'Target' ]
             return confusion_matrix( true, pred )
 
-rosemary = Classifierz( last_x_days = 300, cycle = 10, return_days = 14, multicollinearity = True )
+rosemary = Classifierz( last_x_days = 400, cycle = 10, return_days = 14, multicollinearity = True )
+
 
 
 rosemary.select_classifier( 'EXT', 'crash' )
